@@ -9,23 +9,25 @@ AI Ethics Assistant - A RAG-based Q&A system for answering questions about AI po
 ## Essential Commands
 
 ```bash
-# Package management (use uv, not pip)
+# Package management (ALWAYS use uv, NEVER pip or poetry)
 uv sync                        # Install all dependencies
 uv add <package>              # Add runtime dependency
 uv add <package> --group dev  # Add development dependency
+uv remove <package>           # Remove runtime dependency
+uv remove <package> --group dev # Remove development dependency
 
 # Development
-uvicorn ai_ethics_assistant.cmds.server:app --reload --host 0.0.0.0  # Run API server
-python -m ai_ethics_assistant.cmds.gradio_app                        # Run Gradio UI
-python -m ai_ethics_assistant.cmds.ingest                           # Ingest PDFs
+uv run uvicorn ai_ethics_assistant.cmds.server:app --reload --host 0.0.0.0  # Run API server
+uv run python -m ai_ethics_assistant.cmds.gradio_app                        # Run Gradio UI
+uv run python -m ai_ethics_assistant.cmds.ingest                           # Ingest PDFs
 
 # Testing & Quality
-pytest                    # Run all tests
-pytest path/to/test.py   # Run specific test file
-pytest -k "test_name"    # Run specific test
-ruff format              # Format code
-ruff check              # Lint code
-pyright                 # Type check
+uv run pytest                    # Run all tests
+uv run pytest path/to/test.py   # Run specific test file
+uv run pytest -k "test_name"    # Run specific test
+uv run ruff format              # Format code
+uv run ruff check              # Lint code
+uv run pyright                 # Type check
 
 # Docker
 docker compose up -d          # Start services
@@ -105,15 +107,33 @@ Examples: `feat: add PDF ingestion pipeline`, `fix!: correct vector search logic
 Format: `<type>-<description>` or `<type>-<ticket>-<description>`
 Examples: `feat-pdf-ingestion`, `fix-CON-123-search-accuracy`
 
+## UV Usage Guidelines
+
+**CRITICAL**: Always use `uv` for all Python operations:
+
+```bash
+# Python execution - ALWAYS use uv run
+uv run python script.py        # NOT: python script.py
+uv run python -m module        # NOT: python -m module
+uv run uvicorn app:app         # NOT: uvicorn app:app
+uv run pytest                 # NOT: pytest
+
+# Package management - ALWAYS use uv
+uv add package                 # NOT: pip install package
+uv remove package             # NOT: pip uninstall package
+uv sync                       # NOT: pip install -r requirements.txt
+```
+
 ## Important Notes
 
-1. **Always use `uv` for package management**, not pip or poetry
-2. **Use Docling for PDF processing** - superior accuracy (97.9%) and RAG-optimized
-3. **Health endpoints in `internal.py`** separate from business logic
-4. **Co-located tests** with `_test.py` suffix, not separate test directories
-5. **Use SecretStr** for all sensitive configuration values
-6. **Test with pytest-anyio**, mark async tests with `@pytest.mark.anyio`
-7. **Chunk size**: 1000-1500 chars with 200-300 char overlap for optimal retrieval
-8. **Commit signing**: Use `-s` flag when committing
+1. **ALWAYS use `uv run` for all Python commands** - never call python/pytest/ruff directly
+2. **ALWAYS use `uv add/remove` for package management** - never use pip or poetry
+3. **Use Docling for PDF processing** - superior accuracy (97.9%) and RAG-optimized
+4. **Health endpoints in `internal.py`** separate from business logic
+5. **Co-located tests** with `_test.py` suffix, not separate test directories
+6. **Use SecretStr** for all sensitive configuration values
+7. **Test with pytest-anyio**, mark async tests with `@pytest.mark.anyio`
+8. **Chunk size**: 1000-1500 chars with 200-300 char overlap for optimal retrieval
+9. **Commit signing**: Use `-s` flag when committing
 
 Refer to `ARCHITECTURE.md` for detailed design decisions and `conventions/` for complete coding standards.
