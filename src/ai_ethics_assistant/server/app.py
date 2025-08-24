@@ -10,6 +10,7 @@ from ai_ethics_assistant.dependencies import Dependencies
 from ai_ethics_assistant.server.api_v1 import router as api_v1_endpoints
 from ai_ethics_assistant.server.internal import router as internal_endpoints
 from ai_ethics_assistant.services.s3_service import S3Service
+from ai_ethics_assistant.services.vector_store_service import VectorStoreService
 from ai_ethics_assistant.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -32,15 +33,24 @@ def build_app(cfg: Config, **kwargs) -> FastAPI:
 
             # Initialize services
             s3_service = S3Service(cfg.s3)
+            vector_store_service = VectorStoreService(cfg.vector_db)
 
             # Test S3 connection during startup (fail fast)
             if not await s3_service.test_connection():
                 raise RuntimeError("Failed to connect to S3 service")
 
+            # Test Qdrant connection during startup (fail fast)
+            if not await vector_store_service.test_connection():
+                raise RuntimeError("Failed to connect to Qdrant service")
+
+            # Ensure collection exists
+            await vector_store_service.ensure_collection()
+
             # Initialize dependencies
             app.state.dependencies = Dependencies(
                 config=cfg,
                 s3_service=s3_service,
+                vector_store_service=vector_store_service,
             )
             app.state.readiness_lock = readiness_lock
 
