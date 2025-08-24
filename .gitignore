@@ -74,7 +74,7 @@ venv.bak/
 .env.*.local
 
 # UV
-uv.lock
+#uv.lock
 
 # Temporary files
 tmp/
