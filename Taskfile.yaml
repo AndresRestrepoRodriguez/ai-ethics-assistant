@@ -82,3 +82,10 @@ tasks:
     desc: start the local docker development env
     cmds:
       - docker compose up {{.CLI_ARGS | default "--watch --build"}}
+
+  ingest:
+    desc: Run PDF ingestion pipeline to process documents from S3 to Qdrant
+    deps:
+      - setup
+    cmds:
+      - uv run python scripts/ingest.py

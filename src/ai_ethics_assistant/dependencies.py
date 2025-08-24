@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from fastapi import Request
 
 from ai_ethics_assistant.configuration import Config
+from ai_ethics_assistant.pipeline.embedder import HuggingFaceEmbedder
 from ai_ethics_assistant.services.s3_service import S3Service
 from ai_ethics_assistant.services.vector_store_service import VectorStoreService
 
@@ -12,6 +13,7 @@ class Dependencies:
     config: Config
     s3_service: S3Service
     vector_store_service: VectorStoreService
+    embedder: HuggingFaceEmbedder
     # Future services will be added here in later stages
     # rag_service: RAGService
     # llm_service: LLMService
@@ -33,3 +35,9 @@ def get_vector_store_service(request: Request) -> VectorStoreService:
     """Get vector store service from application state."""
     state: Dependencies = request.app.state.dependencies
     return state.vector_store_service
+
+
+def get_embedder(request: Request) -> HuggingFaceEmbedder:
+    """Get embedder from application state."""
+    state: Dependencies = request.app.state.dependencies
+    return state.embedder

@@ -3,7 +3,14 @@ from datetime import datetime
 from uuid import uuid4
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 from ai_ethics_assistant.configuration import VectorDBConfig
 
@@ -146,3 +153,49 @@ class VectorStoreService:
         except Exception as e:
             logger.error(f"Failed to connect to Qdrant: {e}")
             return False
+
+    async def delete_by_filter(self, filter_condition: dict) -> int:
+        """Delete points by metadata filter
+
+        Args:
+            filter_condition: Filter condition like {"document_id": "some_id"}
+
+        Returns:
+            Number of points deleted
+        """
+        try:
+            # Convert simple dict filter to Qdrant Filter format
+            field_conditions = []
+            for key, value in filter_condition.items():
+                field_conditions.append(
+                    FieldCondition(key=key, match=MatchValue(value=value))
+                )
+
+            filter_obj = Filter(must=field_conditions)
+
+            # Use scroll to find matching points, then delete
+            points_to_delete = []
+            scroll_result = self.client.scroll(
+                collection_name=self.config.collection_name,
+                scroll_filter=filter_obj,
+                limit=10000,  # Process in batches
+            )
+
+            points_to_delete.extend([point.id for point in scroll_result[0]])
+
+            # Delete the points
+            if points_to_delete:
+                self.client.delete(
+                    collection_name=self.config.collection_name,
+                    points_selector=points_to_delete,
+                )
+                logger.info(
+                    f"Deleted {len(points_to_delete)} points matching filter {filter_condition}"
+                )
+                return len(points_to_delete)
+            else:
+                logger.info(f"No points found matching filter {filter_condition}")
+                return 0
+
+        except Exception as e:
+            raise VectorStoreError(f"Failed to delete by filter: {e}")
