@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - VECTOR_DB__HOST=qdrant
+      - VECTOR_DB__PORT=6333
+      - VECTOR_DB__COLLECTION_NAME=ai_ethics_docs
+      - LOG_LEVEL=INFO
+      - DEV_MODE=true
+      # LLM settings
+      - LLM__MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.2
+      - LLM__API_KEY=${LLM__API_KEY:-}
+      # S3 settings
+      - S3__BUCKET_NAME=${S3__BUCKET_NAME:-}
+      - S3__REGION=${S3__REGION:-us-east-1}
+      - S3__ACCESS_KEY_ID=${S3__ACCESS_KEY_ID:-}
+      - S3__SECRET_ACCESS_KEY=${S3__SECRET_ACCESS_KEY:-}
+    depends_on:
+      - qdrant
+    develop:
+      watch:
+        - path: ./src/
+          target: /app/src/
+          action: sync
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  qdrant_data:

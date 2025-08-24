@@ -1,0 +1,84 @@
+version: 3
+
+env:
+  POETRY_VIRTUALENVS_IN_PROJECT: "true"
+  POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON: "true"
+  APPLICATION_NAME: "ai-ethics-assistant"
+  DOCKER_IMAGE: "{{.APPLICATION_NAME}}"
+
+dotenv:
+  - .env
+
+tasks:
+  default:
+    desc: Run the default task
+    cmds:
+      - task --list
+
+  setup:
+    desc: Create the local development env
+    cmds:
+      - task: python-setup
+
+  python-setup:
+    desc: Create a python 3 virtualenv
+    cmds:
+      - uv venv
+    sources:
+      - pyproject.toml
+    generates:
+      - ".venv/*"
+
+  lint:
+    desc: lint the python code
+    deps:
+      - setup
+    cmds:
+      - "uv run --frozen ruff check ."
+      - "uv run --frozen pyright ."
+      - "uv run --frozen typos ."
+
+  format:
+    desc: format the python code
+    deps:
+      - setup
+    cmds:
+      - "uv run --frozen ruff format ."
+      - "uv run --frozen ruff check --fix-only ."
+      - "uv run --frozen typos -w ."
+
+  test:
+    desc: Run the tests
+    deps:
+      - setup
+    cmds:
+      - "uv run --frozen pytest . {{.CLI_ARGS}}"
+
+  clean:
+    desc: Clean the project
+    cmds:
+      - rm -rf tmp
+      - rm -rf .venv
+      - rm -rf .pytest_cache
+      - rm -rf .ruff_cache
+
+  build:
+    desc: Build the application
+    deps:
+      - setup
+    cmds:
+      - docker build -t {{.DOCKER_IMAGE}} .
+    sources:
+      - Dockerfile
+      - pyproject.toml
+      - src/**/*.py
+
+  run-locally:
+    desc: 'Run the application locally. For example: task run-locally ARGS="--help"'
+    cmds:
+      - uv run python -m ai_ethics_assistant.cmds.server {{.ARGS}}
+
+  run:
+    desc: start the local docker development env
+    cmds:
+      - docker compose up {{.CLI_ARGS | default "--watch --build"}}
