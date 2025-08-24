@@ -9,6 +9,7 @@ from ai_ethics_assistant.configuration import Config
 from ai_ethics_assistant.dependencies import Dependencies
 from ai_ethics_assistant.server.api_v1 import router as api_v1_endpoints
 from ai_ethics_assistant.server.internal import router as internal_endpoints
+from ai_ethics_assistant.services.s3_service import S3Service
 from ai_ethics_assistant.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -29,9 +30,17 @@ def build_app(cfg: Config, **kwargs) -> FastAPI:
         async with readiness_lock:
             logger.warning("Setting up application")
 
+            # Initialize services
+            s3_service = S3Service(cfg.s3)
+
+            # Test S3 connection during startup (fail fast)
+            if not await s3_service.test_connection():
+                raise RuntimeError("Failed to connect to S3 service")
+
             # Initialize dependencies
             app.state.dependencies = Dependencies(
                 config=cfg,
+                s3_service=s3_service,
             )
             app.state.readiness_lock = readiness_lock
 

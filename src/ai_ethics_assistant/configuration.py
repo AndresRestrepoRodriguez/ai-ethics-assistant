@@ -20,8 +20,14 @@ class LLMConfig(BaseSettings):
 class S3Config(BaseSettings):
     bucket_name: str = ""
     region: str = "us-east-1"
-    access_key_id: SecretStr | None = None
-    secret_access_key: SecretStr | None = None
+    access_key_id: SecretStr
+    secret_access_key: SecretStr
+    pdf_prefix: str = ""
+
+
+class EmbeddingConfig(BaseSettings):
+    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    batch_size: int = 32
 
 
 class Config(BaseSettings):
@@ -40,7 +46,10 @@ class Config(BaseSettings):
     llm: LLMConfig = Field(default_factory=LLMConfig)
 
     # S3 configuration
-    s3: S3Config = Field(default_factory=S3Config)
+    s3: S3Config = Field(default_factory=S3Config)  # type: ignore
+
+    # Embedding configuration
+    embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
 
     # Document processing settings
     chunk_size: int = 1000

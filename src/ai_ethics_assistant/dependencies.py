@@ -3,11 +3,13 @@ from dataclasses import dataclass
 from fastapi import Request
 
 from ai_ethics_assistant.configuration import Config
+from ai_ethics_assistant.services.s3_service import S3Service
 
 
 @dataclass
 class Dependencies:
     config: Config
+    s3_service: S3Service
     # Future services will be added here in later stages
     # rag_service: RAGService
     # vector_store_client: QdrantClient
@@ -18,3 +20,9 @@ def get_config(request: Request) -> Config:
     """Get configuration from application state."""
     state: Dependencies = request.app.state.dependencies
     return state.config
+
+
+def get_s3_service(request: Request) -> S3Service:
+    """Get S3 service from application state."""
+    state: Dependencies = request.app.state.dependencies
+    return state.s3_service
