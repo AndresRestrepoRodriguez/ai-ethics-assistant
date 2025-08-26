@@ -7,20 +7,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
+      # Override for Docker networking
       - VECTOR_DB__HOST=qdrant
-      - VECTOR_DB__PORT=6333
-      - VECTOR_DB__COLLECTION_NAME=ai_ethics_docs
-      - LOG_LEVEL=INFO
-      - DEV_MODE=true
-      # LLM settings
-      - LLM__MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.2
-      - LLM__API_KEY=${LLM__API_KEY:-}
-      # S3 settings
-      - S3__BUCKET_NAME=${S3__BUCKET_NAME:-}
-      - S3__REGION=${S3__REGION:-us-east-1}
-      - S3__ACCESS_KEY_ID=${S3__ACCESS_KEY_ID:-}
-      - S3__SECRET_ACCESS_KEY=${S3__SECRET_ACCESS_KEY:-}
     depends_on:
       - qdrant
     develop:
@@ -28,6 +19,28 @@ services:
         - path: ./src/
           target: /app/src/
           action: sync
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    environment:
+      # Override for Docker networking
+      - BACKEND_URL=http://app:8000
+    depends_on:
+      - app
+    # Gradio can be slow to stop, so we use SIGKILL
+    stop_signal: SIGKILL
+    develop:
+      watch:
+        - path: ./src/ai_ethics_assistant/cmds/
+          target: /app/src/ai_ethics_assistant/cmds/
+          action: sync
+    command: ["python", "-m", "ai_ethics_assistant.cmds.gradio_app"]
 
   qdrant:
     image: qdrant/qdrant:latest

@@ -12,9 +12,12 @@ class VectorDBConfig(BaseSettings):
 
 class LLMConfig(BaseSettings):
     model_name: str = "mistralai/Mistral-7B-Instruct-v0.2"
-    api_key: SecretStr | None = None
+    api_key: SecretStr
     max_tokens: int = 1000
     temperature: float = 0.7
+    timeout: int = 30
+    max_retries: int = 3
+    streaming: bool = True
 
 
 class S3Config(BaseSettings):
@@ -43,7 +46,7 @@ class Config(BaseSettings):
     vector_db: VectorDBConfig = Field(default_factory=VectorDBConfig)
 
     # LLM configuration
-    llm: LLMConfig = Field(default_factory=LLMConfig)
+    llm: LLMConfig = Field(default_factory=LLMConfig)  # type: ignore
 
     # S3 configuration
     s3: S3Config = Field(default_factory=S3Config)  # type: ignore

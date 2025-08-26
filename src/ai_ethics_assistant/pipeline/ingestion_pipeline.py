@@ -1,7 +1,7 @@
 import hashlib
 import logging
 from datetime import datetime, timezone
-from uuid import uuid5, NAMESPACE_DNS
+from uuid import NAMESPACE_DNS, uuid5
 
 from ai_ethics_assistant.configuration import Config
 from ai_ethics_assistant.pipeline.embedder import HuggingFaceEmbedder, TextChunker
@@ -129,8 +129,10 @@ class IngestionPipeline:
                 payload["chunk_id"] = chunk["chunk_id"]
 
                 # Generate deterministic UUID from document_id and chunk_id
-                point_id = str(uuid5(NAMESPACE_DNS, f"{document_id}_chunk_{chunk['chunk_id']}"))
-                
+                point_id = str(
+                    uuid5(NAMESPACE_DNS, f"{document_id}_chunk_{chunk['chunk_id']}")
+                )
+
                 embeddings_data.append(
                     {
                         "id": point_id,
