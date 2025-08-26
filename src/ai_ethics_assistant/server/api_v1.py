@@ -5,13 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from ai_ethics_assistant.configuration import Config
-from ai_ethics_assistant.dependencies import get_config, get_rag_service
+from ai_ethics_assistant.dependencies import get_rag_service
 from ai_ethics_assistant.server.models import (
     ChatRequest,
     ChatResponse,
-    HealthResponse,
-    RAGHealthResponse,
 )
 from ai_ethics_assistant.services.rag_service import RAGService
 
@@ -19,17 +16,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
 
 
-@router.get("/health", response_model=HealthResponse, tags=["health"])
-async def api_health_check(
-    config: Annotated[Config, Depends(get_config)],
-) -> HealthResponse:
-    """
-    Check if the API is healthy.
-    """
-    return HealthResponse(
-        status="healthy",
-        message=f"AI Ethics Assistant API is running (dev_mode: {config.dev_mode})",
-    )
 
 
 @router.post("/chat", response_model=ChatResponse, tags=["chat"])
@@ -115,38 +101,5 @@ async def chat(
         )
 
 
-@router.get("/rag/health", response_model=RAGHealthResponse, tags=["health"])
-async def rag_health_check(
-    rag_service: Annotated[RAGService, Depends(get_rag_service)],
-) -> RAGHealthResponse:
-    """
-    Check the health of all RAG system components.
-    """
-    try:
-        health_status = await rag_service.health_check()
-        return RAGHealthResponse(**health_status)
-    except Exception as e:
-        logger.error(f"RAG health check error: {e}")
-        return RAGHealthResponse(
-            rag_service="unhealthy",
-            llm_service="unknown",
-            vector_store="unknown",
-            overall="unhealthy",
-            error=str(e),
-        )
 
 
-@router.get("/status", tags=["status"])
-async def get_status(config: Annotated[Config, Depends(get_config)]):
-    """
-    Get system status information.
-    """
-    return {
-        "status": "ready",
-        "services": {
-            "api": "running",
-            "vector_db": f"configured for {config.vector_db.host}:{config.vector_db.port}",
-            "llm": f"configured for {config.llm.model_name}",
-        },
-        "dev_mode": config.dev_mode,
-    }
