@@ -4,6 +4,7 @@ from typing import AsyncGenerator
 from huggingface_hub import InferenceClient
 
 from ai_ethics_assistant.configuration import LLMConfig
+from ai_ethics_assistant.prompts import QUERY_REFORMULATION_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +24,13 @@ class LLMService:
 
     async def reformulate_query(self, user_query: str) -> str:
         """Reformulate user query to improve search results"""
-        reformulation_prompt = f"""You are an AI assistant helping users find information about AI policy and ethics.
-
-The user has asked: "{user_query}"
-
-Reformulate this query to be more comprehensive and likely to match relevant content in AI ethics documents. Add related terms, expand acronyms, and make the query more specific to AI policy, ethics, governance, or regulation topics.
-
-Return only the reformulated query, nothing else."""
+        reformulation_prompt = QUERY_REFORMULATION_TEMPLATE.format(
+            user_query=user_query
+        )
 
         try:
             reformulated = self._generate_text(
-                reformulation_prompt, max_tokens=100, temperature=0.3
+                reformulation_prompt, system_prompt="", max_tokens=100, temperature=0.3
             )
 
             reformulated = reformulated.strip()
@@ -51,23 +48,33 @@ Return only the reformulated query, nothing else."""
             return user_query
 
     async def generate_response(
-        self, prompt: str, stream: bool | None = None
+        self,
+        prompt: str,
+        system_prompt: str,
+        stream: bool | None = None,
     ) -> str | AsyncGenerator[str, None]:
         """Generate LLM response, optionally streaming"""
         should_stream = stream if stream is not None else self.config.streaming
 
         if should_stream:
-            return self._generate_streaming(prompt)
+            return self._generate_streaming(prompt, system_prompt=system_prompt)
         else:
-            return self._generate_text(prompt)
+            return self._generate_text(prompt, system_prompt=system_prompt)
 
     def _generate_text(
-        self, prompt: str, max_tokens: int | None = None, temperature: float | None = None
+        self,
+        prompt: str,
+        system_prompt: str,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
     ) -> str:
         """Generate complete text response using chat completions"""
         try:
-            # Convert prompt to messages format
-            messages = [{"role": "user", "content": prompt}]
+            # Build proper message structure with mandatory system prompt
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
 
             completion = self.client.chat.completions.create(
                 model=self.config.model_name,
@@ -83,11 +90,16 @@ Return only the reformulated query, nothing else."""
         except Exception as e:
             raise LLMServiceError(f"Generation failed: {e}")
 
-    async def _generate_streaming(self, prompt: str) -> AsyncGenerator[str, None]:
+    async def _generate_streaming(
+        self, prompt: str, system_prompt: str
+    ) -> AsyncGenerator[str, None]:
         """Generate streaming text response using chat completions"""
         try:
-            # Convert prompt to messages format
-            messages = [{"role": "user", "content": prompt}]
+            # Build proper message structure with mandatory system prompt
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
 
             stream = self.client.chat.completions.create(
                 model=self.config.model_name,
@@ -107,7 +119,9 @@ Return only the reformulated query, nothing else."""
     async def test_connection(self) -> bool:
         """Test connection to HuggingFace API"""
         try:
-            _test_response = self._generate_text("Hello", max_tokens=1, temperature=0.1)
+            self._generate_text(
+                "Hello", system_prompt="", max_tokens=1, temperature=0.1
+            )
             logger.info("Successfully connected to HuggingFace Inference API")
             return True
         except Exception as e:

@@ -2,6 +2,7 @@ import logging
 from typing import Any, AsyncGenerator, Dict, List
 
 from ai_ethics_assistant.pipeline.embedder import HuggingFaceEmbedder
+from ai_ethics_assistant.prompts import RAG_PROMPT_TEMPLATE, SYSTEM_PROMPT
 from ai_ethics_assistant.services.llm_service import LLMService
 from ai_ethics_assistant.services.vector_store_service import VectorStoreService
 
@@ -42,8 +43,10 @@ class RAGService:
             # Build prompt with context
             prompt = self._build_prompt(user_query, context)
 
-            # Generate response
-            return await self.llm_service.generate_response(prompt, stream=stream)
+            # Generate response with separate system prompt
+            return await self.llm_service.generate_response(
+                prompt, stream=stream, system_prompt=SYSTEM_PROMPT
+            )
 
         except Exception as e:
             logger.error(f"RAG pipeline failed for query '{user_query}': {e}")
@@ -98,25 +101,8 @@ class RAGService:
         return "\n---\n".join(context_parts)
 
     def _build_prompt(self, user_query: str, context: str) -> str:
-        """Build the complete prompt for the LLM"""
-        system_prompt = """You are an AI Ethics Assistant, a knowledgeable expert on AI policy, ethics, governance, and regulation. Your role is to provide accurate, helpful, and well-informed responses about AI ethics topics based on the provided context from authoritative documents.
-
-Guidelines:
-- Provide clear, accurate, and comprehensive answers based on the context
-- If the context doesn't contain enough information, acknowledge this limitation
-- Focus on practical guidance and actionable insights when appropriate
-- Use specific examples from the context when relevant
-- Maintain a professional but approachable tone
-- Do not make up information that isn't supported by the context"""
-
-        return f"""{system_prompt}
-
-Context from AI Ethics Documents:
-{context}
-
-User Question: {user_query}
-
-Please provide a comprehensive answer based on the context above. If the context doesn't fully address the question, mention what information is available and what might be missing."""
+        """Build the user content for the LLM (context + query only)"""
+        return RAG_PROMPT_TEMPLATE.format(context=context, user_query=user_query)
 
     async def health_check(self) -> Dict[str, Any]:
         """Perform health check of RAG components"""
