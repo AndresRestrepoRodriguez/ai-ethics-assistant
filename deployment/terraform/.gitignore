@@ -1,0 +1,83 @@
+# .gitignore - Files to exclude from version control
+# These files contain sensitive information or are generated automatically
+
+# Terraform State Files - NEVER commit these!
+# They contain the current state of your infrastructure
+# and may include sensitive data like private IPs, etc.
+*.tfstate
+*.tfstate.*
+
+# Terraform Variable Files - These contain your secrets!
+# terraform.tfvars contains your actual S3 bucket names, etc.
+*.tfvars
+*.tfvars.json
+
+# Terraform Local Files
+# Terraform generates these files locally
+**/.terraform/*
+.terraform.lock.hcl
+
+# Crash Log Files
+crash.log
+crash.*.log
+
+# Override Files
+# Used for local development overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI Configuration Files
+.terraformrc
+terraform.rc
+
+# SSH Keys - NEVER commit private keys!
+*.pem
+*.key
+id_rsa*
+
+# AWS Credentials - NEVER commit credentials!
+.aws/credentials
+.aws/config
+credentials
+
+# Backup Files
+*.backup
+*.bak
+*~
+
+# Temporary Files
+*.tmp
+*.temp
+
+# MacOS Files
+.DS_Store
+.DS_Store?
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log Files
+*.log
+
+# Environment Files
+.env
+.env.local
+.env.production
+.env.staging
+
+# What SHOULD be committed:
+# - All .tf files (versions.tf, main.tf, etc.)
+# - .tf.example files (templates)
+# - .gitignore itself
+# - README.md and documentation
+
+# Security Note:
+# If you accidentally commit sensitive files, you need to:
+# 1. Remove them from git history (git filter-branch)
+# 2. Rotate/change any exposed credentials
+# 3. Never rely on just deleting files - git remembers everything!

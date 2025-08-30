@@ -1,0 +1,42 @@
+# terraform.tfvars.example - Example Variable Values
+# Copy this file to terraform.tfvars and customize with your values
+# terraform.tfvars is gitignored to keep your settings private
+
+# AWS Region - where to create resources
+# us-east-1 = N. Virginia (usually cheapest)
+# us-west-2 = Oregon
+# eu-west-1 = Ireland
+aws_region = "us-east-1"
+
+# EC2 Instance Type
+# t3.micro  = 2 vCPU, 1GB RAM  (~$8/month)  - minimum viable
+# t3.small  = 2 vCPU, 2GB RAM  (~$15/month) - recommended
+# t3.medium = 2 vCPU, 4GB RAM  (~$30/month) - if you need more power
+instance_type = "t3.small"
+
+# SSH Key Pair Name
+# This should match the key you created with:
+# aws ec2 create-key-pair --key-name rag-assistant-key
+key_pair_name = "rag-assistant-key"
+
+# S3 Bucket Name - REQUIRED!
+# Replace with your actual S3 bucket name containing PDFs
+s3_bucket_name = "your-pdf-bucket-name-here"
+
+# Project Name (used for resource naming)
+# Keep it short, lowercase, with hyphens only
+project_name = "rag-assistant"
+
+# Optional: Restrict SSH access to your IP only (recommended)
+# To find your IP: curl ifconfig.me
+# Then use: "YOUR.IP.HERE/32"
+# Default allows SSH from anywhere (less secure)
+allowed_ssh_ip = "0.0.0.0/0"
+
+# Optional: Root volume size in GB
+# 30GB should be enough for the OS, Docker images, and Qdrant data
+root_volume_size = 30
+
+# Optional: Environment tag
+# Useful if you have multiple environments
+environment = "production"
